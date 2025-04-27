@@ -8,8 +8,8 @@ export class EnumArgumentType extends ArgumentType<string> {
 		for (const item of this.items) {
 			const text = reader.getRemaining();
 			if (text.startsWith(item)) {
-				reader.setCursor(reader.getCursor() + text.length);
-				return text;
+				reader.setCursor(reader.getCursor() + item.length);
+				return item;
 			}
 		}
 		throw new Error("An error occured!");
@@ -17,8 +17,9 @@ export class EnumArgumentType extends ArgumentType<string> {
 
 	override listSuggestions(_: CommandContext, builder: SuggestionsBuilder): Suggestions {
 		for (const item of this.items) {
-			if (item.startsWith(builder.remaining.toLowerCase()))
+			if (item.startsWith(builder.remaining.toLowerCase())) {
 				builder.suggest(item);
+			}
 		}
 		return builder.build();
 	}
