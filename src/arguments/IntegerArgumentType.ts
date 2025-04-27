@@ -1,20 +1,25 @@
-import { StringReader, NumberArgumentType, CommandSyntaxError } from "..";
+import type { CommandContext, StringReader, SuggestionsBuilder } from "..";
+import { NumberArgumentType } from "./NumberArgumentType";
+import { Suggestions } from "..";
 
-export class IntegerArgumentType extends NumberArgumentType {
+class IntegerArgumentType extends NumberArgumentType {
+	constructor(minimum = -2147483648, maximum = 2147483647) {
+		super(minimum, maximum);
+	}
 
-    constructor(minimum = -2147483648, maximum = 2147483647) {
-        super(minimum, maximum);
-    }
+	readNumber(reader: StringReader): number {
+		return reader.readInt();
+	}
 
-    readNumber(reader: StringReader): number {
-        return reader.readInt();
-    }
-    
-    getTooSmallError() {
-        return CommandSyntaxError.INTEGER_TOO_SMALL;
-    }
+	override listSuggestions(_: CommandContext, builder: SuggestionsBuilder): Suggestions {
+		const value = Number(builder.remaining);
+		if (isNaN(value) || !Number.isInteger(value) || builder.remaining.length === 0)
+			return Suggestions.EMPTY;
+		return builder.suggest("<number>", builder.remaining).build();
+	}
 
-    getTooBigError() {
-        return CommandSyntaxError.INTEGER_TOO_BIG;
-    }
+}
+
+export function integer(minimum = -2147483648, maximum = 2147483647) {
+	return new IntegerArgumentType(minimum, maximum);
 }

@@ -1,105 +1,55 @@
-import {
-    StringReader,
-    Command,
-    LiteralCommandNode,
-    ArgumentCommandNode,
-    CommandContext,
-    CommandContextBuilder,
-    Predicate,
-    RedirectModifier,
-    SuggestionsBuilder,
-    Suggestions
-} from '..';
+import { ArgumentCommandNode, LiteralCommandNode } from "..";
+import type { CommandContext, CommandContextBuilder, StringReader, Suggestions, SuggestionsBuilder } from "..";
+import type { Command } from "../../types";
 
-export abstract class CommandNode<S> {
-    private children: Map<string, CommandNode<S>>;
-    private literals: Map<string, LiteralCommandNode<S>>;
-    private arguments: Map<string, ArgumentCommandNode<S, any>>;
-    private command: Command<S>;
-    private requirement: Predicate<S>;
-    private redirect: CommandNode<S>;
-    private modifier: RedirectModifier<S>;
-    private forks: boolean;
+export abstract class CommandNode {
+	private _children: Map<string, CommandNode> = new Map();
+	private literals: Map<string, LiteralCommandNode> = new Map();
+	private arguments: Map<string, ArgumentCommandNode<unknown>> = new Map();
+	get children(): CommandNode[] { return Array.from(this._children.values()); }
+	private _command?: Command;
+	get command(): Command | undefined { return this._command; }
+	abstract get name(): string;
 
-    constructor(command: Command<S>, requirement: Predicate<S>, redirect: CommandNode<S>, modifier: RedirectModifier<S>, forks: boolean) {
-        this.children = new Map();
-        this.literals = new Map();
-        this.arguments = new Map();
-        this.command = command;
-        this.requirement = requirement;
-        this.redirect = redirect;
-        this.modifier = modifier;
-        this.forks = forks;
-    }
+	constructor(command: Command | undefined) {
+		this._command = command;
+	}
 
-    getCommand(): Command<S> {
-        return this.command;
-    }
+	abstract parse(reader: StringReader, context: CommandContextBuilder): void;
 
-    getChildren(): CommandNode<S>[] {
-        return Array.from(this.children.values());
-    }
+	abstract listSuggestions(context: CommandContext, builder: SuggestionsBuilder): Suggestions;
 
-    getChild(name: string): CommandNode<S> {
-        return this.children.get(name);
-    }
+	getRelevantNodes(input: StringReader): CommandNode[] {
+		if (this.literals.size > 0) {
+			const cursor = input.getCursor();
+			while (input.canRead() && input.peek() != " ") {
+				input.skip();
+			}
+			const text = input.getString().substring(cursor, input.getCursor());
+			input.setCursor(cursor);
+			const literal = this.literals.get(text);
+			if (literal != null) {
+				return [literal];
+			}
+		}
+		return Array.from(this.arguments.values());
+	}
 
-    getRedirect(): CommandNode<S> {
-        return this.redirect;
-    }
-
-    getRedirectModifier(): RedirectModifier<S> {
-        return this.modifier;
-    }
-
-    isFork(): boolean {
-        return this.forks;
-    }
-
-    canUse(source: S) {
-        return this.requirement(source);
-    }
-
-    addChild(node: CommandNode<S>): void {
-        const child = this.children.get(node.getName());
-        if (child != null) {
-            if (node.getCommand() != null) {
-                child.command = node.getCommand();
-            }
-            node.getChildren().forEach((grandChild) => {
-                child.addChild(grandChild);
-            });
-        } else {
-            this.children.set(node.getName(), node);
-            if (node instanceof LiteralCommandNode) {
-                this.literals.set(node.getName(), node);
-            } else if (node instanceof ArgumentCommandNode) {
-                this.arguments.set(node.getName(), node);
-            }
-        }
-    }
-
-    abstract parse(reader: StringReader, context: CommandContextBuilder<S>): void;
-
-    abstract getName(): string;
-
-    abstract getUsageText(): string;
-
-    abstract listSuggestions(context: CommandContext<S>, builder: SuggestionsBuilder): Promise<Suggestions>;
-
-    getRelevantNodes(input: StringReader): CommandNode<S>[] {
-        if (this.literals.size > 0) {
-            const cursor = input.getCursor();
-            while (input.canRead() && input.peek() != " ") {
-                input.skip();
-            }
-            const text = input.getString().substring(cursor, input.getCursor());
-            input.setCursor(cursor);
-            const literal = this.literals.get(text);
-            if (literal != null) {
-                return [literal];
-            }
-        }
-        return Array.from(this.arguments.values());
-    }
+	addChild(node: CommandNode) {
+		const child = this._children.get(node.name);
+		if (child) {
+			if (child.command) {
+				child._command = node._command;
+			}
+			node._children.forEach((grandChild) => {
+				child.addChild(grandChild);
+			});
+		} else {
+			this._children.set(node.name, node);
+			if (node instanceof LiteralCommandNode)
+				this.literals.set(node.name, node);
+			else if (node instanceof ArgumentCommandNode)
+				this.arguments.set(node.name, node);
+		}
+	}
 }

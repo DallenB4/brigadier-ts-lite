@@ -1,20 +1,24 @@
-import { StringReader, NumberArgumentType, CommandSyntaxError } from "..";
+import type { CommandContext, StringReader, SuggestionsBuilder } from "..";
+import { NumberArgumentType } from "./NumberArgumentType";
+import { Suggestions } from "..";
 
-export class FloatArgumentType extends NumberArgumentType {
+class FloatArgumentType extends NumberArgumentType {
+	constructor(minimum = -Infinity, maximum = Infinity) {
+		super(minimum, maximum);
+	}
 
-    constructor(minimum = -Infinity, maximum = Infinity) {
-        super(minimum, maximum);
-    }
+	readNumber(reader: StringReader): number {
+		return reader.readFloat();
+	}
 
-    readNumber(reader: StringReader): number {
-        return reader.readFloat();
-    }
+	override listSuggestions(_: CommandContext, builder: SuggestionsBuilder): Suggestions {
+		const value = Number(builder.remaining);
+		if (isNaN(value) || builder.remaining.length === 0)
+			return Suggestions.EMPTY;
+		return builder.suggest("<number>", builder.remaining).build();
+	}
+}
 
-    getTooSmallError() {
-        return CommandSyntaxError.FLOAT_TOO_SMALL;
-    }
-
-    getTooBigError() {
-        return CommandSyntaxError.FLOAT_TOO_BIG;
-    }
+export function float(minimum = -Infinity, maximum = Infinity) {
+	return new FloatArgumentType(minimum, maximum);
 }

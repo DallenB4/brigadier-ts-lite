@@ -1,30 +1,22 @@
 import { ArgumentBuilder, LiteralCommandNode } from "..";
 
-export class LiteralArgumentBuilder<S> extends ArgumentBuilder<S, LiteralArgumentBuilder<S>> {
-    private literal: string;
+export class LiteralArgumentBuilder extends ArgumentBuilder {
+	readonly literal: string;
 
-    constructor(literal: string) {
-        super();
-        this.literal = literal
-    }
+	constructor(name: string) {
+		super();
+		this.literal = name;
+	}
 
-    getThis(): LiteralArgumentBuilder<S> {
-        return this;
-    }
-
-    getLiteral(): string {
-        return this.literal;
-    }
-    
-    build(): LiteralCommandNode<S> {
-        const result = new LiteralCommandNode<S>(this.getLiteral(), this.getCommand(), this.getRequirement(), this.getRedirect(), this.getRedirectModifier(), this.isFork());
-        for (const argument of this.getArguments()) {
-            result.addChild(argument);
-        }
-        return result;
-    }
+	override build(): LiteralCommandNode {
+		const result = new LiteralCommandNode(this.literal, this.command);
+		for (const argument of this.arguments.children) {
+			result.addChild(argument);
+		}
+		return result;
+	}
 }
 
-export function literal<S = any>(name: string): LiteralArgumentBuilder<S> {
-    return new LiteralArgumentBuilder(name);
+export function literal(name: string) {
+	return new LiteralArgumentBuilder(name);
 }

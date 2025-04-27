@@ -1,30 +1,15 @@
-import { 
-    CommandNode,
-    StringReader,
-    CommandContextBuilder,
-    CommandContext,
-    Suggestions,
-    SuggestionsBuilder
-} from '..';
+import { CommandNode, Suggestions } from "..";
 
-export class RootCommandNode<S> extends CommandNode<S> {
+export class RootCommandNode extends CommandNode {
+	parse(): void { }
 
-    constructor() {
-        super(null, c => true, null, c => null, false);
-    }
+	constructor() {
+		super(undefined);
+	}
 
-    parse(reader: StringReader, contextBuilder: CommandContextBuilder<S>): void {
-    }
+	override get name(): string { return ''; };
 
-    getName(): string {
-        return "";
-    }
-
-    getUsageText(): string {
-        return "";
-    }
-
-    listSuggestions(context: CommandContext<S>, builder: SuggestionsBuilder): Promise<Suggestions> {
-        return Suggestions.empty();
-    }
+	listSuggestions(): Suggestions {
+		return Suggestions.EMPTY;
+	}
 }

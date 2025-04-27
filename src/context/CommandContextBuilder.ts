@@ -1,148 +1,90 @@
-import {
-    CommandNode,
-    CommandDispatcher,
-    Command,
-    CommandContext,
-    StringRange,
-    ParsedCommandNode,
-    ParsedArgument,
-    RedirectModifier,
-    SuggestionContext
-} from "..";
+import type { Command, ParsedArgument, ParsedCommandNode, SuggestionContext } from "../../types";
+import type { CommandDispatcher, CommandNode } from "..";
+import { CommandContext } from "..";
+import { StringRange } from "..";
 
-export class CommandContextBuilder<S> {
-    private source: S;
-    private arguments: Map<string, ParsedArgument<any>>;
-    private rootNode: CommandNode<S>;
-    private dispatcher: CommandDispatcher<S>;
-    private command: Command<S>;
-    private child: CommandContextBuilder<S>;
-    private range: StringRange;
-    private nodes: ParsedCommandNode<S>[];
-    private modifier: RedirectModifier<S>;
-    private forks: boolean;
+export class CommandContextBuilder {
+	private range: StringRange;
+	private command?: Command;
+	private arguments: Map<string, ParsedArgument<unknown>> = new Map();
+	private nodes: ParsedCommandNode[] = [];
+	private _child?: CommandContextBuilder;
+	get child(): CommandContextBuilder | undefined { return this._child; }
 
-    constructor(dispatcher: CommandDispatcher<S>, source: S, rootNode: CommandNode<S>, start: number) {
-        this.dispatcher = dispatcher;
-        this.source = source;
-        this.rootNode = rootNode;
-        this.range = StringRange.at(start);
-        this.nodes = [];
-        this.arguments = new Map();
-    }
+	constructor(private dispatcher: CommandDispatcher, private rootNode: CommandNode, start: number) {
+		this.range = StringRange.at(start);
+	}
 
-    withSource(source: S): CommandContextBuilder<S> {
-        this.source = source;
-        return this;
-    }
+	build(input: string): CommandContext {
+		return new CommandContext(
+			input,
+			this.arguments,
+			this.command,
+			this.rootNode,
+			this.nodes,
+			this.range,
+			this._child?.build(input)
+		);
+	}
 
-    getSource(): S {
-        return this.source;
-    }
+	withCommand(command: Command | undefined): this {
+		this.command = command;
+		return this;
+	}
 
-    getRootNode(): CommandNode<S> {
-        return this.rootNode;
-    }
+	withNode(node: CommandNode, range: StringRange) {
+		this.nodes.push({ node, range });
+		this.range = StringRange.encompassing(this.range, range);
+		return this;
+	}
 
-    withArgument(name: string, argument: ParsedArgument<any>): CommandContextBuilder<S> {
-        this.arguments.set(name, argument);
-        return this;
-    }
+	withArgument<T>(name: string, argument: ParsedArgument<T>) {
+		this.arguments.set(name, argument);
+	}
 
-    getArguments(): Map<string, ParsedArgument<any>> {
-        return this.arguments;
-    }
+	withChild(child: CommandContextBuilder) {
+		this._child = child;
+		return this;
+	}
 
-    withChild(child: CommandContextBuilder<S>): CommandContextBuilder<S> {
-        this.child = child;
-        return this;
-    }
+	copy(): CommandContextBuilder {
+		const copy = new CommandContextBuilder(this.dispatcher, this.rootNode, this.range.start);
+		copy.command = this.command;
+		copy.range = this.range;
+		copy.nodes.push(...this.nodes);
+		copy._child = this._child;
+		this.arguments.forEach((v, k) => {
+			copy.arguments.set(k, v);
+		});
+		return copy;
+	}
 
-    getChild(): CommandContextBuilder<S> {
-        return this.child;
-    }
-
-    getLastChild(): CommandContextBuilder<S> {
-        let result: CommandContextBuilder<S> = this;
-        while (result.getChild() != null) {
-            result = result.getChild();
-        }
-        return result;
-    }
-
-    withCommand(command: Command<S>): CommandContextBuilder<S> {
-        this.command = command;
-        return this;
-    }
-
-    getCommand(): Command<S> {
-        return this.command;
-    }
-
-    withNode(node: CommandNode<S>, range: StringRange): CommandContextBuilder<S> {
-        this.nodes.push(new ParsedCommandNode<S>(node, range));
-        this.range = StringRange.encompassing(this.range, range);
-        this.modifier = node.getRedirectModifier();
-        this.forks = node.isFork();
-        return this;
-    }
-
-    getNodes(): ParsedCommandNode<S>[] {
-        return this.nodes;
-    }
-
-    copy(): CommandContextBuilder<S> {
-        const copy = new CommandContextBuilder<S>(this.dispatcher, this.source, this.rootNode, this.range.getStart());
-        copy.command = this.command;
-        copy.child = this.child;
-        copy.range = this.range;
-        copy.nodes.push(...this.nodes);
-        this.arguments.forEach((v, k) => {
-            copy.arguments.set(k, v);
-        });
-        return copy;
-
-    }
-
-    build(input: string): CommandContext<S> {
-        const child = this.child == null ? null : this.child.build(input);
-        return new CommandContext(this.source, input, this.arguments, this.command, this.rootNode, this.nodes, this.range, child, this.modifier, this.forks);
-    }
-
-    getDispatcher(): CommandDispatcher<S> {
-        return this.dispatcher;
-    }
-
-    getRange(): StringRange {
-        return this.range;
-    }
-
-    findSuggestionContext(cursor: number): SuggestionContext<S> {
-        if (this.range.getStart() <= cursor) {
-            if (this.range.getEnd() < cursor) {
-                if (this.child != null) {
-                    return this.child.findSuggestionContext(cursor);
-                } else if (this.nodes.length > 0) {
-                    const last = this.nodes[this.nodes.length - 1];
-                    return new SuggestionContext(last.getNode(), last.getRange().getEnd() + 1);
-                } else {
-                    return new SuggestionContext(this.rootNode, this.range.getStart());
-                }
-            } else {
-                let prev = this.rootNode;
-                for (const node of this.nodes) {
-                    const nodeRange = node.getRange();
-                    if (nodeRange.getStart() <= cursor && cursor <= nodeRange.getEnd()) {
-                        return new SuggestionContext(prev, nodeRange.getStart());
-                    }
-                    prev = node.getNode();
-                }
-                if (prev === null) {
-                    throw new Error("Can't find node before cursor");
-                }
-                return new SuggestionContext(prev, this.range.getStart());
-            }
-        }
-        throw new Error("Can't find node before cursor");
-    }
+	findSuggestionContext(cursor: number): SuggestionContext {
+		if (this.range.start <= cursor) {
+			if (this.range.end < cursor) {
+				if (this.child != null) {
+					return this.child.findSuggestionContext(cursor);
+				} else if (this.nodes.length > 0) {
+					const last = this.nodes[this.nodes.length - 1];
+					return { parent: last.node, startPos: last.range.end + 1 };
+				} else {
+					return { parent: this.rootNode, startPos: this.range.start };
+				}
+			} else {
+				let prev = this.rootNode;
+				for (const node of this.nodes) {
+					const nodeRange = node.range;
+					if (nodeRange.start <= cursor && cursor <= nodeRange.end) {
+						return { parent: prev, startPos: nodeRange.start };
+					}
+					prev = node.node;
+				}
+				if (prev === null) {
+					throw new Error("Can't find node before cursor");
+				}
+				return { parent: prev, startPos: this.range.start };
+			}
+		}
+		throw new Error("Can't find node before cursor");
+	}
 }

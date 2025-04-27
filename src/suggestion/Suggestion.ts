@@ -1,55 +1,38 @@
-import { StringRange } from "..";
+import type { StringRange } from "..";
 
 export class Suggestion {
-    private range: StringRange;
-    private text: string;
-    private tooltip: string;
+	constructor(readonly range: StringRange, readonly text: string, private _tooltip?: string) { }
 
-    constructor(range: StringRange, text: string, tooltip?: string) {
-        this.range = range;
-        this.text = text;
-        this.tooltip = tooltip;
-    }
+	get tooltip(): string { return this._tooltip ?? this.text; }
 
-    getRange() {
-        return this.range;
-    }
+	apply(input: string): string {
+		if (this.range.start == 0 && this.range.end === input.length) {
+			return this.text;
+		}
+		let result = "";
+		if (this.range.start > 0) {
+			result += input.substring(0, this.range.start);
+		}
+		result += this.text;
+		if (this.range.end < input.length) {
+			result += input.substring(this.range.end);
+		}
+		return result;
+	}
 
-    getText() {
-        return this.text;
-    }
-
-    getTooltip() {
-        return this.tooltip;
-    }
-
-    apply(input: string): string {
-        if (this.range.getStart() == 0 && this.range.getEnd() === input.length) {
-            return this.text;
-        }
-        let result = "";
-        if (this.range.getStart() > 0) {
-            result += input.substring(0, this.range.getStart());
-        }
-        result += this.text;
-        if (this.range.getEnd() < input.length) {
-            result += input.substring(this.range.getEnd());
-        }
-        return result;
-    }
-
-    expand(command: string, range: StringRange): Suggestion {
-        if (range === this.range) {
-            return this;
-        }
-        let result = "";
-        if (range.getStart() < this.range.getStart()) {
-            result += command.substring(range.getStart(), this.range.getStart());
-        }
-        result += this.text;
-        if (range.getEnd() > this.range.getEnd()) {
-            result += command.substring(this.range.getEnd(), range.getEnd());
-        }
-        return new Suggestion(range, result, this.tooltip);
-    }
+	expand(command: string, range: StringRange): Suggestion {
+		if (range === this.range) {
+			return this;
+		}
+		let result = "";
+		if (range.start < this.range.start) {
+			result += command.substring(range.start, this.range.start);
+		}
+		result += this.text;
+		if (range.end > this.range.end) {
+			result += command.substring(this.range.end, range.end);
+		}
+		return new Suggestion(range, result, this._tooltip);
+	}
 }
+

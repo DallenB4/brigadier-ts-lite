@@ -1,82 +1,22 @@
-import {
-    CommandNode,
-    RootCommandNode,
-    Command,
-    Predicate,
-    CommandContext
-} from "..";
+import type { Command } from "../../types";
+import type { CommandNode } from "..";
+import { RootCommandNode } from "..";
 
-export type RedirectModifier<S> = (context: CommandContext<S>) => S | S[];
+export abstract class ArgumentBuilder {
+	private _command?: Command;
+	get command(): Command | undefined { return this._command; }
+	private _arguments: RootCommandNode = new RootCommandNode();
+	get arguments(): RootCommandNode { return this._arguments; }
 
-export abstract class ArgumentBuilder<S, T extends ArgumentBuilder<S, T>> {
-    private arguments: RootCommandNode<S>;
-    private command: Command<S>;
-    private requirement: Predicate<S>;
-    private target: CommandNode<S>;
-    private modifier: RedirectModifier<S>;
-    private forks: boolean;
+	then(argument: ArgumentBuilder): this {
+		this._arguments.addChild(argument.build());
+		return this;
+	}
 
-    constructor() {
-        this.arguments = new RootCommandNode();
-        this.requirement = s => true;
-    }
+	executes(command: Command): this {
+		this._command = command;
+		return this;
+	}
 
-    abstract getThis(): T;
-
-    then(argument: ArgumentBuilder<S, any> | CommandNode<S>): T {
-        const child = argument instanceof CommandNode ? argument : argument.build();
-        this.arguments.addChild(child);
-        return this.getThis();
-    }
-
-    executes(command: Command<S>): T {
-        this.command = command;
-        return this.getThis();
-    }
-
-    requires(requirement: Predicate<S>): T {
-        this.requirement = requirement;
-        return this.getThis();
-    }
-
-    redirect(target: CommandNode<S>, modifier: RedirectModifier<S> = null): T {
-        return this.forward(target, modifier, false)
-    }
-
-    fork(target: CommandNode<S>, modifier: RedirectModifier<S>): T {
-        return this.forward(target, modifier, true);
-    }
-
-    forward(target: CommandNode<S>, modifier: RedirectModifier<S>, forks: boolean): T {
-        this.target = target;
-        this.modifier = modifier;
-        this.forks = forks;
-        return this.getThis();
-    }
-
-    getArguments(): CommandNode<S>[] {
-        return this.arguments.getChildren();
-    }
-
-    getCommand(): Command<S> {
-        return this.command;
-    }
-
-    getRequirement(): Predicate<S> {
-        return this.requirement;
-    }
-
-    getRedirect(): CommandNode<S> {
-        return this.target;
-    }
-
-    getRedirectModifier(): RedirectModifier<S> {
-        return this.modifier;
-    }
-
-    isFork(): boolean {
-        return this.forks;
-    }
-
-    abstract build(): CommandNode<S>;
+	abstract build(): CommandNode;
 }

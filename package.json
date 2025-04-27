@@ -1,30 +1,36 @@
 {
-  "name": "brigadier-ts",
-  "version": "1.4.1",
-  "description": "TypeScript port of Mojang/brigadier",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "rimraf dist/ && tsc --build",
-    "prepublishOnly": "npm run build",
-    "test": "node --experimental-vm-modules --no-warnings node_modules/jest/bin/jest.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/misode/brigadier-ts.git"
-  },
-  "keywords": [],
-  "author": "Misode",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/misode/brigadier-ts/issues"
-  },
-  "homepage": "https://github.com/misode/brigadier-ts#readme",
-  "devDependencies": {
-    "@types/jest": "^27.4.1",
-    "esbuild-jest": "^0.5.0",
-    "jest": "^27.5.1",
-    "rimraf": "^3.0.2",
-    "typescript": "^4.6.3"
-  }
+	"$schema": "https://github.com/SchemaStore/schemastore/raw/refs/heads/master/src/schemas/json/package.json",
+	"name": "brigadier-ts-lite",
+	"version": "1.0.0",
+	"description": "A lightweight command parser and dispatcher inspired by Mojang Studios' Brigadier",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"build": "rimraf dist/ && tsc --build",
+		"test": "node --experimental-vm-modules --no-warnings node_modules/jest/bin/jest.js"
+	},
+	"author": "dallenb4",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/dallenb4/brigadier-ts-lite/issues"
+	},
+	"homepage": "https://github.com/dallenb4/brigadier-ts-lite#readme",
+	"devDependencies": {
+		"@types/jest": "^29.5.14",
+		"@typescript-eslint/eslint-plugin": "^8.31.0",
+		"esbuild-jest": "^0.5.0",
+		"eslint": "^9.25.1",
+		"jest": "^29.7.0",
+		"rimraf": "^6.0.1",
+		"typescript": "^5.8.3",
+		"typescript-eslint": "^8.31.0"
+	}
 }

@@ -1,28 +1,24 @@
-import {
-    ArgumentType,
-    StringReader,
-    CommandContext,
-    SuggestionsBuilder,
-    Suggestions
-} from "..";
+import type { CommandContext, StringReader, Suggestions, SuggestionsBuilder } from "..";
+import { ArgumentType } from "..";
 
 export class BoolArgumentType extends ArgumentType<boolean> {
 
-    parse(reader: StringReader): boolean {
-        return reader.readBoolean();
-    }
+	parse(reader: StringReader): boolean {
+		return reader.readBoolean();
+	}
 
-    listSuggestions(context: CommandContext<any>, builder: SuggestionsBuilder): Promise<Suggestions> {
-        if ("true".startsWith(builder.getRemaining().toLowerCase())) {
-            builder.suggest("true");
-        }
-        if ("false".startsWith(builder.getRemaining().toLowerCase())) {
-            builder.suggest("false");
-        }
-        return builder.buildPromise();
-    }
+	override listSuggestions(_: CommandContext, builder: SuggestionsBuilder): Suggestions {
+		// Both are if statements because empty strings should suggest both true and false
+		if ("true".startsWith(builder.remaining.toLowerCase())) {
+			builder.suggest("true");
+		}
+		if ("false".startsWith(builder.remaining.toLowerCase())) {
+			builder.suggest("false");
+		}
+		return builder.build();
+	}
 }
 
-export function bool(): BoolArgumentType {
-    return new BoolArgumentType();
+export function boolean(): BoolArgumentType {
+	return new BoolArgumentType();
 }

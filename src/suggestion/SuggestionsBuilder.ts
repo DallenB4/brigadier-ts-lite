@@ -1,60 +1,36 @@
-import { 
-    Suggestion,
-    Suggestions,
-    StringRange
-} from "..";
+import { StringRange, Suggestion, Suggestions } from "..";
 
 export class SuggestionsBuilder {
-    private input: string;
-    private start: number;
-    private remaining: string;
-    private result: Suggestion[];
+	readonly remaining: string;
+	result: Suggestion[];
 
-    constructor(input: string, start: number) {
-        this.input = input;
-        this.start = start;
-        this.remaining = input.substring(start);
-        this.result = [];
-    }
+	constructor(readonly input: string, readonly start: number) {
+		this.remaining = input.substring(start);
+		this.result = [];
+	}
 
-    getInput(): string {
-        return this.input;
-    }
+	build(): Suggestions {
+		return Suggestions.create(this.input, this.result);
+	}
 
-    getStart(): number {
-        return this.start;
-    }
+	suggest(text: string, tooltip?: string): SuggestionsBuilder {
+		// if (text === this.remaining) {
+		// 	return this;
+		// }
+		this.result.push(new Suggestion(new StringRange(this.start, this.input.length), text, tooltip));
+		return this;
+	}
 
-    getRemaining(): string {
-        return this.remaining;
-    }
+	add(other: SuggestionsBuilder): SuggestionsBuilder {
+		this.result.concat(other.result);
+		return this;
+	}
 
-    build(): Suggestions {
-        return Suggestions.create(this.input, this.result);
-    }
+	createOffset(start: number): SuggestionsBuilder {
+		return new SuggestionsBuilder(this.input, start);
+	}
 
-    buildPromise(): Promise<Suggestions> {
-        return Promise.resolve(this.build());
-    }
-
-    suggest(text: string, tooltip?: string): SuggestionsBuilder {
-        if (text === this.remaining) {
-            return this;
-        }
-        this.result.push(new Suggestion(new StringRange(this.start, this.input.length), text, tooltip))
-        return this;
-    }
-
-    add(other: SuggestionsBuilder): SuggestionsBuilder {
-        this.result.concat(other.result);
-        return this;
-    }
-
-    createOffset(start: number): SuggestionsBuilder {
-        return new SuggestionsBuilder(this.input, start);
-    }
-
-    restart(start: number): SuggestionsBuilder {
-        return new SuggestionsBuilder(this.input, this.start);
-    }
+	restart(): SuggestionsBuilder {
+		return new SuggestionsBuilder(this.input, this.start);
+	}
 }

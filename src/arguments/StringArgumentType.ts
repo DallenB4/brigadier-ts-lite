@@ -1,40 +1,31 @@
-import { ArgumentType, StringReader } from "..";
+import type { CommandContext, StringReader, Suggestions, SuggestionsBuilder } from "..";
+import { ArgumentType } from "..";
 
 type StringType = "single_word" | "quotable_phrase" | "greedy_phrase";
 
 export class StringArgumentType extends ArgumentType<string> {
-    private type: StringType;
+	constructor(readonly type: StringType) { super(); }
 
-    constructor(type: StringType) {
-        super();
-        this.type = type;
-    }
+	parse(reader: StringReader): string {
+		switch (this.type) {
+			case "greedy_phrase": {
+				const text = reader.getRemaining();
+				reader.setCursor(reader.getTotalLength());
+				return text;
+			}
+			case "single_word":
+				return reader.readUnquotedString();
+			default:
+				return reader.readString();
+		}
+	}
 
-    getType(): StringType {
-        return this.type;
-    }
-
-    parse(reader: StringReader): string {
-        if (this.type === "greedy_phrase") {
-            const text = reader.getRemaining();
-            reader.setCursor(reader.getTotalLength());
-            return text;
-        } else if (this.type === "single_word") {
-            return reader.readUnquotedString();
-        } else {
-            return reader.readString();
-        }
-    }
+	override listSuggestions(_: CommandContext, builder: SuggestionsBuilder): Suggestions {
+		builder.suggest(this.type, builder.remaining);
+		return builder.build();
+	}
 }
 
-export function word(): StringArgumentType {
-    return new StringArgumentType("single_word");
-}
-
-export function string(): StringArgumentType {
-    return new StringArgumentType("quotable_phrase");
-}
-
-export function greedyString(): StringArgumentType {
-    return new StringArgumentType("greedy_phrase");
+export function string(type: StringType) {
+	return new StringArgumentType(type);
 }

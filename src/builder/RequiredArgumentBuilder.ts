@@ -1,40 +1,18 @@
-import { 
-    ArgumentBuilder,
-    ArgumentType,
-    ArgumentCommandNode
-} from "..";
+import { ArgumentBuilder, ArgumentCommandNode } from "..";
+import type { ArgumentType, CommandNode } from "..";
 
-export class RequiredArgumentBuilder<S, T> extends ArgumentBuilder<S, RequiredArgumentBuilder<S, T>> {
-    private name: string;
-    private type: ArgumentType<T>;
+export class RequiredArgumentBuilder extends ArgumentBuilder {
+	constructor(private name: string, private type: ArgumentType<unknown>) { super(); }
 
-    constructor(name: string, type: ArgumentType<T>) {
-        super();
-        this.name = name;
-        this.type = type;
-    }
-
-    getThis(): RequiredArgumentBuilder<S, T> {
-        return this;
-    }
-
-    getName(): string {
-        return this.name;
-    }
-
-    getType(): ArgumentType<T> {
-        return this.type;
-    }
-    
-    build(): ArgumentCommandNode<S, T> {
-        const result = new ArgumentCommandNode(this.getName(), this.getType(), this.getCommand(), this.getRequirement(), this.getRedirect(), this.getRedirectModifier(), this.isFork());
-        for (const argument of this.getArguments()) {
-            result.addChild(argument);
-        }
-        return result;
-    }
+	build(): CommandNode {
+		const result = new ArgumentCommandNode(this.name, this.type, this.command);
+		for (const argument of this.arguments.children) {
+			result.addChild(argument);
+		}
+		return result;
+	}
 }
 
-export function argument<S = any, T = any>(name: string, type: ArgumentType<T>): RequiredArgumentBuilder<S, T> {
-    return new RequiredArgumentBuilder(name, type);
+export function argument<T>(name: string, type: ArgumentType<T>) {
+	return new RequiredArgumentBuilder(name, type);
 }
