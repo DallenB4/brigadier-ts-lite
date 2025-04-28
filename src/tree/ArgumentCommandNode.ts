@@ -22,9 +22,6 @@ export class ArgumentCommandNode<T> extends CommandNode {
 	}
 
 	override listSuggestions(context: CommandContext, builder: SuggestionsBuilder): Suggestions {
-		let suggestions = this.type.listSuggestions(context, builder);
-		if (suggestions.isEmpty)
-			suggestions = builder.suggest(this.name).build();
-		return suggestions;
+		return this.type.listSuggestions(context, builder);
 	}
 }

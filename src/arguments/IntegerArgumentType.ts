@@ -1,6 +1,5 @@
-import type { CommandContext, StringReader, SuggestionsBuilder } from "..";
+import type { CommandContext, StringReader, Suggestions, SuggestionsBuilder } from "..";
 import { NumberArgumentType } from "./NumberArgumentType";
-import { Suggestions } from "..";
 
 class IntegerArgumentType extends NumberArgumentType {
 	constructor(minimum = -2147483648, maximum = 2147483647) {
@@ -14,7 +13,12 @@ class IntegerArgumentType extends NumberArgumentType {
 	override listSuggestions(_: CommandContext, builder: SuggestionsBuilder): Suggestions {
 		const value = Number(builder.remaining);
 		if (isNaN(value) || !Number.isInteger(value) || builder.remaining.length === 0)
-			return Suggestions.EMPTY;
+			return builder.suggest("<number>").build();
+		if (value < this.minimum) {
+			throw new Error("Too small!");
+		} else if (value > this.maximum) {
+			throw new Error("Too large!");
+		}
 		return builder.suggest("<number>", builder.remaining).build();
 	}
 

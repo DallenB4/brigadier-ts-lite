@@ -1,6 +1,5 @@
-import type { CommandContext, StringReader, SuggestionsBuilder } from "..";
+import type { CommandContext, StringReader, Suggestions, SuggestionsBuilder } from "..";
 import { NumberArgumentType } from "./NumberArgumentType";
-import { Suggestions } from "..";
 
 class FloatArgumentType extends NumberArgumentType {
 	constructor(minimum = -Infinity, maximum = Infinity) {
@@ -14,7 +13,7 @@ class FloatArgumentType extends NumberArgumentType {
 	override listSuggestions(_: CommandContext, builder: SuggestionsBuilder): Suggestions {
 		const value = Number(builder.remaining);
 		if (isNaN(value) || builder.remaining.length === 0)
-			return Suggestions.EMPTY;
+			return builder.suggest("<number>").build();
 		return builder.suggest("<number>", builder.remaining).build();
 	}
 }

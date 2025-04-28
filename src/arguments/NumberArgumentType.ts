@@ -2,14 +2,7 @@ import { ArgumentType } from "..";
 import type { StringReader } from "..";
 
 export abstract class NumberArgumentType<N extends number | bigint = number> extends ArgumentType<N> {
-	private minimum: N;
-	private maximum: N;
-
-	constructor(minimum: N, maximum: N) {
-		super();
-		this.minimum = minimum;
-		this.maximum = maximum;
-	}
+	constructor(protected minimum: N, protected maximum: N) { super(); }
 
 	getMinimum(): N {
 		return this.minimum;
