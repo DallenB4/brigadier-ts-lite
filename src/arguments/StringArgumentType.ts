@@ -21,7 +21,8 @@ export class StringArgumentType extends ArgumentType<string> {
 	}
 
 	override listSuggestions(_: CommandContext, builder: SuggestionsBuilder): Suggestions {
-		builder.suggest(this.type, builder.remaining);
+		if (builder.remaining.length > 0)
+			builder.suggest(this.type, builder.remaining);
 		return builder.build();
 	}
 }
