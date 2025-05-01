@@ -15,6 +15,7 @@
 	},
 	"scripts": {
 		"build": "rimraf dist/ && tsc --build",
+		"prepublishOnly": "npm run build",
 		"test": "node --experimental-vm-modules --no-warnings node_modules/jest/bin/jest.js"
 	},
 	"author": "dallenb4",
