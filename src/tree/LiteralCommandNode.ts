@@ -36,7 +36,7 @@ export class LiteralCommandNode extends CommandNode {
 	}
 
 	listSuggestions(_: CommandContext, builder: SuggestionsBuilder): Suggestions {
-		if (this.literal.toLowerCase().startsWith(builder.remaining.toLowerCase())) {
+		if (this.literal.startsWith(builder.remaining)) {
 			return builder.suggest(this.literal).build();
 		} else {
 			return Suggestions.EMPTY;
